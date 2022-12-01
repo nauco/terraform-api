@@ -47,19 +47,39 @@ resource "aws_route_table_association" "public_rt_asso" {
   route_table_id = aws_route_table.public_rt.id
 }
 
+data "aws_ami" "amazon_ami" {
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-2.0.20220606.1-x86_64-gp2"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  most_recent = true
+  owners      = ["amazon"]
+}
+
+### EC2 ###
 resource "aws_instance" "web" {
-  ami             = "ami-005e54dee72cc1d00" 
+  ami             = data.aws_ami.amazon_ami.id
   instance_type   = "t2.micro"
   subnet_id       = aws_subnet.public_subnet.id
   security_groups = [aws_security_group.sg.id]
 
   user_data = <<-EOF
-  #!/bin/bash
-  echo "*** Installing apache2"
-  sudo apt update -y
-  sudo apt install apache2 -y
-  echo "*** Completed Installing apache2"
-  EOF
+yum update -y
+amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
+yum install -y httpd mariadb-server
+systemctl start httpd
+systemctl enable httpd
+usermod -a -G apache ec2-user
+chown -R ec2-user:apache /var/www
+chmod 2775 /var/www
+find /var/www -type d -exec chmod 2775 {} \;
+find /var/www -type f -exec chmod 0664 {} \;
+echo "<?php phpinfo(); ?>" > /var/www/html/phpinfo.php
+EOF
 
   tags = {
     Name = "web_instance"
