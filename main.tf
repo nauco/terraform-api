@@ -67,20 +67,13 @@ resource "aws_security_group" "defaultsgrp" {
   description = "Allow ssh http inbound traffic"
   vpc_id      = aws_vpc.main.id
 
-  ingress {
-    description      = "SSH from VPC"
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      = [aws_vpc.main.cidr_block]
-  }
 
   ingress {
     description      = "HTTP from VPC"
     from_port        = 80
     to_port          = 80
     protocol         = "tcp"
-    cidr_blocks      = [aws_vpc.main.cidr_block]
+    cidr_blocks      = ["0.0.0.0/0"]
   }
 
   egress {
@@ -97,25 +90,21 @@ resource "aws_security_group" "defaultsgrp" {
 
 ### EC2 ###
 resource "aws_instance" "web" {
-  ami           = "ami-0eddbd81024d3fbdd"
+  ami           = "ami-005e54dee72cc1d00"
   instance_type = "t2.micro"
   associate_public_ip_address = "true"
   vpc_security_group_ids = [
     aws_security_group.defaultsgrp.id
   ]
   user_data = <<EOF
-#!/bin/bash
+sudo su
 yum update -y
-amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
-yum install -y httpd mariadb-server
-systemctl start httpd
-systemctl enable httpd
-usermod -a -G apache ec2-user
-chown -R ec2-user:apache /var/www
-chmod 2775 /var/www
-find /var/www -type d -exec chmod 2775 {} \;
-find /var/www -type f -exec chmod 0664 {} \;
-echo "<?php phpinfo(); ?>" > /var/www/html/phpinfo.php
+yum install -y httpd.x86_64
+yum install -y jq
+REGION_AV_ZONE=`curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq .availabilityZone -r`
+systemctl start httpd.service
+systemctl enable httpd.service
+echo “Hello World from $(hostname -f) from the availability zone: $REGION_AV_ZONE” > /var/www/html/index.html
 EOF
   subnet_id = aws_subnet.public-subnet-a.id
   tags = {
