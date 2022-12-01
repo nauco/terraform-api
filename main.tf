@@ -62,6 +62,33 @@ resource "aws_security_group_rule" "sgrprule-ec2" {
   }
 }
 
+resource "aws_security_group" "defaultsgrp" {
+  name        = "allow_tls"
+  description = "Allow TLS inbound traffic"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description      = "TLS from VPC"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = [aws_vpc.main.cidr_block]
+    ipv6_cidr_blocks = [aws_vpc.main.ipv6_cidr_block]
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+    Name = "allow_tls"
+  }
+}
+
 ### EC2 ###
 resource "aws_instance" "web" {
   ami           = "ami-0cc9e73ac3bede711"
@@ -74,7 +101,7 @@ resource "aws_instance" "web" {
 #!/bin/bash
 service httpd start
 EOF
-  subnet_id = aws_subnet.gwlb-subnet-a.id
+  subnet_id = aws_subnet.public-subnet-a.id
   tags = {
     Name = "ec2-${var.service}"
   }
