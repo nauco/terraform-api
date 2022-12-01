@@ -67,10 +67,10 @@ resource "aws_instance" "web" {
 }
 
 variable "region" {
-default = "ap-northeast-2"
+  default = "ap-northeast-2"
 }
-variable "instance_type" {}
-variable "public_subnet_cidr" {}
+variable "public_subnet_cidr" {
+}
 
 resource "aws_security_group" "sg" {
   name        = "allow_ssh_http"
