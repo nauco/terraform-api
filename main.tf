@@ -89,8 +89,8 @@ resource "aws_security_group" "defaultsgrp" {
 
 ### EC2 ###
 resource "aws_instance" "web" {
-  ami           = "ami-0cc9e73ac3bede711"
-  instance_type = "t2.micro"
+  ami           = "ami-003ef1c0e2776ea27"
+  instance_type = "t3.micro"
   associate_public_ip_address = "true"
   vpc_security_group_ids = [
     aws_security_group.defaultsgrp.id
