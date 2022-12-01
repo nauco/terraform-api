@@ -71,6 +71,8 @@ variable "region" {
 }
 variable "public_subnet_cidr" {
 }
+variable "vpc_cidr" {
+}
 
 resource "aws_security_group" "sg" {
   name        = "allow_ssh_http"
