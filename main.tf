@@ -88,9 +88,22 @@ resource "aws_security_group" "defaultsgrp" {
   }
 }
 
+data "aws_ami" "amazon_ami" {
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-2.0.20220606.1-x86_64-gp2"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  most_recent = true
+  owners      = ["amazon"]
+}
+
 ### EC2 ###
 resource "aws_instance" "web" {
-  ami           = "ami-005e54dee72cc1d00"
+  ami           = data.aws_ami.amazon_ami.id
   instance_type = "t2.micro"
   associate_public_ip_address = "true"
   vpc_security_group_ids = [
