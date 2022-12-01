@@ -63,12 +63,20 @@ resource "aws_security_group_rule" "sgrprule-ec2" {
 }
 
 resource "aws_security_group" "defaultsgrp" {
-  name        = "allow_tls"
-  description = "Allow TLS inbound traffic"
+  name        = "allow_ssh_http"
+  description = "Allow ssh http inbound traffic"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description      = "TLS from VPC"
+    description      = "SSH from VPC"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = [aws_vpc.main.cidr_block]
+  }
+
+  ingress {
+    description      = "HTTP from VPC"
     from_port        = 80
     to_port          = 80
     protocol         = "tcp"
@@ -83,31 +91,24 @@ resource "aws_security_group" "defaultsgrp" {
   }
 
   tags = {
-    Name = "allow_tls"
+    Name = "allow_ssh_http"
   }
 }
 
 ### EC2 ###
 resource "aws_instance" "web" {
-  ami           = "ami-003ef1c0e2776ea27"
-  instance_type = "t3.micro"
+  ami           = "ami-005e54dee72cc1d00"
+  instance_type = "t2.micro"
   associate_public_ip_address = "true"
   vpc_security_group_ids = [
     aws_security_group.defaultsgrp.id
   ]
   user_data = <<EOF
 #!/bin/bash
-yum update -y
-amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
-yum install -y httpd mariadb-server
-systemctl start httpd
-systemctl enable httpd
-usermod -a -G apache ec2-user
-chown -R ec2-user:apache /var/www
-chmod 2775 /var/www
-find /var/www -type d -exec chmod 2775 {} \;
-find /var/www -type f -exec chmod 0664 {} \;
-echo "<?php phpinfo(); ?>" > /var/www/html/phpinfo.php
+echo "*** Installing apache2"
+sudo apt update -y
+sudo apt install apache2 -y
+echo "*** Completed Installing apache2"
 EOF
   subnet_id = aws_subnet.public-subnet-a.id
   tags = {
